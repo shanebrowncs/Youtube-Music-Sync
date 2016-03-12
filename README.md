@@ -20,9 +20,12 @@ remote: Compressing objects: 100% (61/61), done.
 remote: Total 67 (delta 36), reused 22 (delta 5), pack-reused 0
 Unpacking objects: 100% (67/67), done.
 Checking connectivity... done.
+
 $ cd Youtube-Music-Sync/
+
 $ sudo ./install.sh
 Youtube-Music-Sync Installed, type "youtube-sync" to execute it
+
 $ youtube-sync -h
 usage: youtube-sync [-h] [-t] [-v] [-s]
 
