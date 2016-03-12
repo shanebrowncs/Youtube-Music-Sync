@@ -8,7 +8,6 @@
 #||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
 
 import json
-from json.decoder import JSONDecodeError
 from pprint import pprint
 import urllib.request as REQ
 import urllib.error
@@ -185,7 +184,7 @@ page = downloadPage(url)
 
 try:
     jsonData = decodeJson(page)
-except JSONDecodeError:
+except json.decoder.JSONDecodeError:
     print("Error: Could not decode JSON response, ensure config.json is setup properly")
     sys.exit(1)
 
