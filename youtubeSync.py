@@ -1,32 +1,71 @@
 #!/usr/bin/env python
 
+#||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+# Author: Shane 'SajeOne' Brown
+# Date: 12/03/2016
+# Revision 2: Made functional without songlist json file
+# Description: Syncs a youtube playlist with a local folder
+#||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+
 import json
+from json.decoder import JSONDecodeError
 from pprint import pprint
 import urllib.request as REQ
+import urllib.error
 import subprocess as sp
 import os
-from os.path import isfile, join
+from os.path import isfile, join, expanduser
 import sys
 import argparse
 import re
+import string
 
-def loadConfigFile():
+# Get Directory of config.json
+def getConfigDir():
+    xdgConfig = str(os.getenv('XDG_CONFIG_HOME'))
+
+    if not xdgConfig:
+        if verbose:
+            print("Warning: XDG_CONFIG_HOME not defined, attempting config read from local directory")
+
+        xdgConfig = os.path.dirname(os.path.realpath(__file__))
+
+    if not os.path.exists(xdgConfig + "/youtubeSync"):
+        try:
+            os.makedirs(xdgConfig + "/youtubeSync")
+        except OSError:
+            print("Could not write to CONFIG directory. Not owned by you?")
+            return False
+
+
+    xdgConfig += "/youtubeSync"
+    return xdgConfig
+
+# Load the config file into memory
+def loadConfigFile(path):
     try:
-        with open(os.path.dirname(os.path.realpath(__file__)) + "/config.json", "r") as configFile:
+        with open(path + "/config.json", "r") as configFile:
             data = configFile.read()
             jsonObj = json.loads(data)
             return jsonObj
     except (FileNotFoundError, IOError) as e:
         return False
 
+# Write default config in the case one doesn't exist
 def writeDefaultConfig():
-    xdgConfig = os.getenv('XDG_CONFIG_HOME')
-    configList = {'playlistID': 'PLP37tSKMt8KzgfdABgSZQ2wV2IirbTOPR', 'googleAPIKey': 'PUT KEY HERE', 'destination': '/home/shane/Music'}
+    xdgConfig = getConfigDir() 
+
+    musicDir = expanduser("~") + "/Music"
+
+    configList = {'playlistID': 'PUT_PLAYLIST_ID_HERE', 'googleAPIKey': 'PUT_KEY_HERE', 'destination': musicDir}
 
     jsonSaveFile = json.dumps(configList, indent=4)
-    with open(os.path.dirname(os.path.realpath(__file__)) + "/config.json", "w") as configFile:
+    with open(xdgConfig + "/config.json", "w") as configFile:
         print(jsonSaveFile, file=configFile)
 
+    print("Created default config at " + xdgConfig)
+
+# Download youtube video at URL specified and convert to mp3 in path folder
 def downloadVideo(url, path):
     proc = sp.Popen(['youtube-dl', '--extract-audio', '--audio-format', 'mp3', '--output', path + "/%(title)s.%(ext)s", url], stdout=sp.PIPE)
     result = proc.communicate()[0]
@@ -38,30 +77,66 @@ def downloadVideo(url, path):
 
     return False
 
+# Download Google API Json for playlist
 def downloadPage(url):
-    response = REQ.urlopen(url)
-    data = response.read()
+    try:
+        response = REQ.urlopen(url)
+        data = response.read()
+    except urllib.error.HTTPError as e:
+        data = e.read()
+
     text = data.decode('utf-8')
     return text
 
+
+# Decode the JSON to python DICT
 def decodeJson(encodedJson):
     data = json.loads(encodedJson)
     return data
 
+# convert list to form without any special characters or whitespace
 def convertListFileSystemNeutral(convList):
     for index, value in enumerate(convList):
-        convList[index] = re.sub('[^A-Za-z0-9]+', '', os.path.splitext(convList[index])[0])
+        convList[index] = re.sub('[^a-zA-Z\d]+', '', os.path.splitext(convList[index])[0])
 
     return convList
 
+
+# convert string to form without any special characters or whitespace
 def convertStringFileSystemNeutral(song):
-    song = re.sub('[^A-Za-z0-9]+', '', os.path.splitext(song)[0])
+    song = re.sub('[^a-zA-Z\d]+', '', os.path.splitext(song)[0])
     return song
 
+def getListDiff(list1, list2):
+    tempList = []
+    for item1 in list1: 
+        item1Trunc = os.path.splitext(item1)[0]
+        item1Trunc = convertStringFileSystemNeutral(item1Trunc)
+        for item2 in list2: 
+            item2 = convertStringFileSystemNeutral(item2)
+            if item1Trunc == item2:
+                tempList.append(item1)
+    
+    return list(set(list1) - set(tempList))
+
+# Get list of songs from directory
 def getSongList(path):
     songs = [f for f in os.listdir(path) if isfile(join(path, f))]
     return songs
 
+# Handle json errors from Google API response
+def errorHandleJson(jsonResp):
+    reason = None
+    if "error" in jsonResp:
+        reason = jsonResp['error']['errors'][0]['reason']
+        if reason == "keyInvalid":
+            reason = "Invalid API Key"
+        elif reason == "playlistNotFound":
+            reason = "Could not find YouTube playlist"
+
+    return reason
+
+# Parse program arguments 
 def parseArguments():
     parser = argparse.ArgumentParser()
     parser.add_argument('-t', '--id3tag', help="Automatically sets up ID3 tags based on '-' delimiter. Requires optional dependency 'python-mutagen'", action="store_true")
@@ -69,7 +144,6 @@ def parseArguments():
     parser.add_argument('-s', '--simulate', help="Simulates without actually downloading, good for speed testing", action="store_true")
     args = parser.parse_args()
     return args
-
 
 # BEGIN EXECUTION
 
@@ -91,7 +165,12 @@ if args.simulate:
 
 
 ## Handle Configuration
-config = loadConfigFile()
+xdgConfig = getConfigDir()
+
+if not xdgConfig:
+    sys.exit(1)
+
+config = loadConfigFile(xdgConfig)
 
 if not config:
     writeDefaultConfig()
@@ -103,23 +182,31 @@ url = "https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&playlist
 
 ## Download page and decode data
 page = downloadPage(url)
-jsonData = decodeJson(page)
+
+try:
+    jsonData = decodeJson(page)
+except JSONDecodeError:
+    print("Error: Could not decode JSON response, ensure config.json is setup properly")
+    sys.exit(1)
+
+response = errorHandleJson(jsonData)
+if response is not None:
+    print("Error: " + response)
+    sys.exit(1)
 
 songs = getSongList(config['destination'])
-songs = convertListFileSystemNeutral(songs)
+neutralSongs = convertListFileSystemNeutral(songs)
 
 curSongList = []
 
-
 ## Loop through items and compare repos
 for items in jsonData['items']:
-    neutralCmp = convertStringFileSystemNeutral(items['snippet']['title']) 
-    curSongList.append(neutralCmp)
-    if not neutralCmp in songs:
+    curSongList.append(items['snippet']['title'])
+
+    neutralSnippet = convertStringFileSystemNeutral(items['snippet']['title'])
+    if not neutralSnippet in neutralSongs:
         print("Downloading " + items['snippet']['title'] + "..")
-        if simulate or downloadVideo("https://youtube.com/watch?v=" + items['snippet']['resourceId']['videoId'], config['destination']):
-            songs.append(items['snippet']['title'])
-        else:
+        if not simulate and not downloadVideo("https://youtube.com/watch?v=" + items['snippet']['resourceId']['videoId'], config['destination']):
             print("\n--DOWNLOAD FAILED--\n")
     else:
         if verbose:
@@ -128,15 +215,8 @@ for items in jsonData['items']:
 
 ## Delete songs removed from remote
 songs = getSongList(config['destination'])
-songs = convertListFileSystemNeutral(songs)
 
-songsForDeletion = list(set(songs) - set(curSongList))
-
-print(songs)
-print("Cur: \n")
-print(curSongList)
-print("Deletion: \n")
-print(songsForDeletion)
+songsForDeletion = getListDiff(songs, curSongList)
 
 for item in songsForDeletion:
     try:
