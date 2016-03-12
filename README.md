@@ -6,8 +6,7 @@ Command-line utility for maintaining active repository of music in YouTube playl
 [![Code Climate](https://codeclimate.com/github/SajeOne/Youtube-Music-Sync/badges/gpa.svg)](https://codeclimate.com/github/SajeOne/Youtube-Music-Sync)
 
 
-### Dependencies:
+### Optional Dependencies:
 ```
-OPTIONAL:
 python-mutagen
 ```
