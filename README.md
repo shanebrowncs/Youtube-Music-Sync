@@ -10,3 +10,28 @@ Command-line utility for maintaining an active repository of music in YouTube pl
 ```
 python-mutagen
 ```
+
+## Installation
+```
+$ git clone https://github.com/SajeOne/Youtube-Music-Sync.git
+Cloning into 'Youtube-Music-Sync'...
+remote: Counting objects: 67, done.
+remote: Compressing objects: 100% (61/61), done.
+remote: Total 67 (delta 36), reused 22 (delta 5), pack-reused 0
+Unpacking objects: 100% (67/67), done.
+Checking connectivity... done.
+$ cd Youtube-Music-Sync/
+$ sudo ./install.sh
+Youtube-Music-Sync Installed, type "youtube-sync" to execute it
+$ youtube-sync -h
+usage: youtube-sync [-h] [-t] [-v] [-s]
+
+optional arguments:
+  -h, --help      show this help message and exit
+  -t, --id3tag    Automatically sets up ID3 tags based on '-' delimiter.
+                  Requires optional dependency 'python-mutagen'
+  -v, --verbose   Includes skipped songs(Already downloaded and in active
+                  playlist)
+  -s, --simulate  Simulates without actually downloading, good for speed
+                  testing
+```
