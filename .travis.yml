@@ -5,4 +5,4 @@ python:
   - "3.4"
   - "3.5"
 
-script: python youtubeSync.py
+script: python youtubeSync.py -h
