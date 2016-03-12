@@ -16,7 +16,7 @@ def loadConfigFile():
             data = configFile.read()
             jsonObj = json.loads(data)
             return jsonObj
-    except FileNotFoundError:
+    except (FileNotFoundError, IOError) as e:
         return False
 
 def writeDefaultConfig():
