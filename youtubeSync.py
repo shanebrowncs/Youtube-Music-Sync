@@ -8,6 +8,7 @@ import os
 from os.path import isfile, join
 import sys
 import argparse
+import re
 
 def loadConfigFile():
     try:
@@ -26,39 +27,11 @@ def writeDefaultConfig():
     with open(os.path.dirname(os.path.realpath(__file__)) + "/config.json", "w") as configFile:
         print(jsonSaveFile, file=configFile)
 
-
-def deleteList(songList):
-    dirFiles = [f for f in os.listdir("./") if isfile(join("./", f))]
-
-    for item in dirFiles:
-        for song in songList:
-            if song in item:
-                os.remove(item)
-                print("Removed " + song)
-                dirFiles.remove(item)
-                songList.remove(song)
-
-    return True
-    
-
-def loadSongList(path):
-    try:
-        with open(path + "/songlist.json", "r") as jsonFile:
-            data = jsonFile.read()
-            jsonObj = json.loads(data)
-            return jsonObj
-    except FileNotFoundError:
-        return False
-
-def saveSongList(songList, path):
-    jsonSaveFile = json.dumps(songList)
-    with open(path + "/songlist.json", "w") as jsonFile:
-        print(jsonSaveFile, file=jsonFile)
-
 def downloadVideo(url, path):
     proc = sp.Popen(['youtube-dl', '--extract-audio', '--audio-format', 'mp3', '--output', path + "/%(title)s.%(ext)s", url], stdout=sp.PIPE)
     result = proc.communicate()[0]
     status = proc.returncode
+    
 
     if status == 0:
         return True
@@ -75,15 +48,37 @@ def decodeJson(encodedJson):
     data = json.loads(encodedJson)
     return data
 
+def convertListFileSystemNeutral(convList):
+    for index, value in enumerate(convList):
+        convList[index] = re.sub('[^A-Za-z0-9]+', '', os.path.splitext(convList[index])[0])
+
+    return convList
+
+def convertStringFileSystemNeutral(song):
+    song = re.sub('[^A-Za-z0-9]+', '', os.path.splitext(song)[0])
+    return song
+
+def getSongList(path):
+    songs = [f for f in os.listdir(path) if isfile(join(path, f))]
+    return songs
+
+def parseArguments():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-t', '--id3tag', help="Automatically sets up ID3 tags based on '-' delimiter. Requires optional dependency 'python-mutagen'", action="store_true")
+    parser.add_argument('-v', '--verbose', help="Includes skipped songs(Already downloaded and in active playlist)", action="store_true")
+    parser.add_argument('-s', '--simulate', help="Simulates without actually downloading, good for speed testing", action="store_true")
+    args = parser.parse_args()
+    return args
+
+
 # BEGIN EXECUTION
 
-parser = argparse.ArgumentParser()
-parser.add_argument('-t', '--id3tag', help="Automatically sets up ID3 tags based on '-' delimiter. Requires optional dependency 'python-mutagen'", action="store_true")
-parser.add_argument('-v', '--verbose', help="Includes skipped songs(Already downloaded and in active playlist)", action="store_true")
-args = parser.parse_args()
+## Handle Arguments
+args = parseArguments()
 
 tagFiles = False
 verbose = False
+simulate = False
 
 if args.id3tag:
    tagFiles = True
@@ -91,6 +86,11 @@ if args.id3tag:
 if args.verbose:
     verbose = True
 
+if args.simulate:
+    simulate = True
+
+
+## Handle Configuration
 config = loadConfigFile()
 
 if not config:
@@ -101,21 +101,23 @@ if not config:
 url = "https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&playlistId=" + config['playlistID'] + "&key=" + config['googleAPIKey'] + "&maxResults=50"
 
 
+## Download page and decode data
 page = downloadPage(url)
 jsonData = decodeJson(page)
 
-songs = loadSongList(config['destination'])
-
-if songs is False:
-    songs = []
+songs = getSongList(config['destination'])
+songs = convertListFileSystemNeutral(songs)
 
 curSongList = []
 
+
+## Loop through items and compare repos
 for items in jsonData['items']:
-    curSongList.append(items['snippet']['title'])
-    if items['snippet']['title'] not in songs:
+    neutralCmp = convertStringFileSystemNeutral(items['snippet']['title']) 
+    curSongList.append(neutralCmp)
+    if not neutralCmp in songs:
         print("Downloading " + items['snippet']['title'] + "..")
-        if downloadVideo("https://youtube.com/watch?v=" + items['snippet']['resourceId']['videoId'], config['destination']):
+        if simulate or downloadVideo("https://youtube.com/watch?v=" + items['snippet']['resourceId']['videoId'], config['destination']):
             songs.append(items['snippet']['title'])
         else:
             print("\n--DOWNLOAD FAILED--\n")
@@ -123,11 +125,27 @@ for items in jsonData['items']:
         if verbose:
             print("SKIPPING " + items['snippet']['title'])
 
+
+## Delete songs removed from remote
+songs = getSongList(config['destination'])
+songs = convertListFileSystemNeutral(songs)
+
 songsForDeletion = list(set(songs) - set(curSongList))
 
-songs = list(set(songs) - set(songsForDeletion))
+print(songs)
+print("Cur: \n")
+print(curSongList)
+print("Deletion: \n")
+print(songsForDeletion)
 
-# Add Tags
+for item in songsForDeletion:
+    try:
+        os.remove(config['destination'] + "/" + item)
+        print("Removed " + item)
+    except FileNotFoundError:
+        print("Could not remove " + item)
+
+## If -t flag add ID3 tags to files
 if tagFiles: 
     proc = sp.Popen(['python', 'mp3tags.py', '-p', config['destination']], stdout=sp.PIPE, stderr=sp.PIPE)
     result = proc.communicate()[1]
@@ -138,7 +156,3 @@ if tagFiles:
         print("ID3 Tagged Files")
     else:
         print("\nFailed to tag files\n" + result)
-
-
-deleteList(songsForDeletion)
-saveSongList(songs, config['destination'])
