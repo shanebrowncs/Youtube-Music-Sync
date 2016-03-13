@@ -7,6 +7,10 @@ Command-line utility for maintaining an active repository of music in YouTube pl
 
 ![Youtube-Sync Image](https://i.imgur.com/W6g9E5H.png "Example use of Youtube-Sync")
 
+### Required Dependencies:
+```
+youtube-dl
+```
 
 ### Optional Dependencies:
 ```
