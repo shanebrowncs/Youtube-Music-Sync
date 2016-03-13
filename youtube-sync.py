@@ -2,8 +2,8 @@
 
 #||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
 # Author: Shane 'SajeOne' Brown
-# Date: 12/03/2016
-# Revision 2: Made functional without songlist json file
+# Date: 13/03/2016
+# Revision 3: Allowed mp3tags to exist in local dir or /usr/bin
 # Description: Syncs a youtube playlist with a local folder
 #||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
 
@@ -226,7 +226,13 @@ for item in songsForDeletion:
 
 ## If -t flag add ID3 tags to files
 if tagFiles: 
-    proc = sp.Popen(['python', 'mp3tags.py', '-p', config['destination']], stdout=sp.PIPE, stderr=sp.PIPE)
+    if os.path.isfile("/usr/bin/mp3tags"):
+        proc = sp.Popen(['mp3tags', '-p', config['destination']], stdout=sp.PIPE, stderr=sp.PIPE)
+    elif os.path.isfile(os.path.dirname(os.path.realpath(__file__)) + "/mp3tags.py"):
+        proc = sp.Popen(['python', 'mp3tags.py', '-p', config['destination']], stdout=sp.PIPE, stderr=sp.PIPE)
+    else:
+        print("Could not find mp3tags in /usr/bin or mp3tags.py in youtube-sync directory. Aborting tagging..")
+        sys.exit(1)
     result = proc.communicate()[1]
 
     result = str(result).replace('\\n', '\n').replace("\\\'", '\'')
