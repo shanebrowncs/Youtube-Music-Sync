@@ -1,5 +1,6 @@
 #!/bin/bash
 
+
 if [ "$(id -u)" != "0" ]; then
     echo "Root required to install files" 1>&2
     exit 1
