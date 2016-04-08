@@ -9,6 +9,7 @@ Command-line utility for maintaining an active repository of music in YouTube pl
 
 ### Required Dependencies:
 ```
+python >=3.0
 youtube-dl
 ```
 
@@ -44,3 +45,21 @@ optional arguments:
   -s, --simulate  Simulates without actually downloading, good for speed
                   testing
 ```
+
+##Setup
+
+Youtube-Sync's config file is put in $XDG_CONFIG_HOME/youtubeSync by default. If XDG_CONFIG_HOME is not defined the config file is placed in the same directory as the youtube-sync python script.
+
+config.json
+```
+{
+    "destination": "/home/$USER/Music",
+    "googleAPIKey": "PUT_KEY_HERE",
+    "playlistID": "PUT_PLAYLIST_ID_HERE"
+}
+```
+* destination - Repository directory (WARNING, ANY FILES(excluding dirs) WILL BE DELETED FROM THIS DIRECTORY IF NOT IN THE REMOTE PLAYLIST)
+* googleAPIKey - Youtube-Sync uses Google's Youtube API to fetch playlists, you can obtain an API key for this [HERE](https://console.developers.google.com/apis/credentials). You will then need to enable the Youtube Data API [HERE](https://console.developers.google.com/apis/api/youtube/overview).
+* playlistID - Youtube playlist ID. For example the playlist link "https://www.youtube.com/playlist?list=PLAL-r3tHdQs205l8ARXJIwoQlfZg9ND6L" has a playlist ID of "PLAL-r3tHdQs205l8ARXJIwoQlfZg9ND6L"
+
+Once this is completed you can run Youtube-Sync by typing "youtube-sync" in a terminal. It should begin to download any music present in the selected playlist.
