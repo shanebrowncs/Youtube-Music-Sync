@@ -1,6 +1,6 @@
 # Maintainer: Shane "SajeOne" Brown <contact@shane-brown.ca>
 pkgname=youtube-sync
-pkgver=1.0.1
+pkgver=1.0.2
 pkgrel=1
 pkgdesc="Maintains a local repository of music from a YouTube playlist"
 arch=('any')
