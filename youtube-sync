@@ -3,7 +3,6 @@
 #||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
 # Author: Shane 'SajeOne' Brown
 # Date: 13/03/2016
-# Revision 3: Allowed mp3tags to exist in local dir or /usr/bin
 # Description: Syncs a youtube playlist with a local folder
 #||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
 
@@ -209,7 +208,8 @@ for items in jsonData['items']:
             print("\n--DOWNLOAD FAILED--\n")
     else:
         if verbose:
-            print("SKIPPING " + items['snippet']['title'])
+            print("SKIPPING: ", end="")
+            print(items['snippet']['title'].encode('utf-8'))
 
 
 ## Delete songs removed from remote
@@ -240,4 +240,4 @@ if tagFiles:
     if not proc.returncode:
         print("ID3 Tagged Files")
     else:
-        print("\nFailed to tag files\n" + result)
+        print("\nFailed to tag files\n")
