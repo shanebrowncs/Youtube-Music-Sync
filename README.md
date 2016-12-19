@@ -17,6 +17,27 @@ python-mutagen
 ```
 
 ## Installation
+
+## On Arch Linux
+```
+$ wget https://gist.githubusercontent.com/SajeOne/87685cfc0208ccb797875b8f671afc69/raw/2290bae13e0b126aca324f07d0b4e8766739ae3f/Youtube-Music-Sync-pkgbuild -O PKGBUILD
+
+$ makepkg -irs
+
+$ youtube-sync -h
+usage: youtube-sync [-h] [-t] [-v] [-s]
+
+optional arguments:
+  -h, --help      show this help message and exit
+  -t, --id3tag    Automatically sets up ID3 tags based on '-' delimiter.
+                  Requires optional dependency 'python-mutagen'
+  -v, --verbose   Includes skipped songs(Already downloaded and in active
+                  playlist)
+  -s, --simulate  Simulates without actually downloading, good for speed
+                  testing
+```
+
+## On Other Distributions
 ```
 $ git clone https://github.com/SajeOne/Youtube-Music-Sync.git
 Cloning into 'Youtube-Music-Sync'...
@@ -28,8 +49,7 @@ Checking connectivity... done.
 
 $ cd Youtube-Music-Sync/
 
-$ sudo ./install.sh
-Youtube-Music-Sync Installed, type "youtube-sync" to execute it
+$ sudo python setup.py install --optimize=1
 
 $ youtube-sync -h
 usage: youtube-sync [-h] [-t] [-v] [-s]
