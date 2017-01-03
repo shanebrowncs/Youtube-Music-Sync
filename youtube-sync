@@ -42,7 +42,7 @@ def getConfigDir():
 # Load the config file into memory
 def loadConfigFile(path):
     try:
-        with open(path + "/config.json", "r") as configFile:
+        with open(path, "r") as configFile:
             data = configFile.read()
             jsonObj = json.loads(data)
             return jsonObj
@@ -140,6 +140,7 @@ def parseArguments():
     parser.add_argument('-t', '--id3tag', help="Automatically sets up ID3 tags based on '-' delimiter. Requires optional dependency 'python-mutagen'", action="store_true")
     parser.add_argument('-v', '--verbose', help="Includes skipped songs(Already downloaded and in active playlist)", action="store_true")
     parser.add_argument('-s', '--simulate', help="Simulates without actually downloading, good for speed testing", action="store_true")
+    parser.add_argument('-c', '--config', help="Alternate config file location")
     args = parser.parse_args()
     return args
 
@@ -163,12 +164,15 @@ if args.simulate:
 
 
 ## Handle Configuration
-xdgConfig = getConfigDir()
+xdgConfig = getConfigDir() + "/config.json"
 
 if not xdgConfig:
     sys.exit(1)
 
-config = loadConfigFile(xdgConfig)
+if args.config == None or not isfile(args.config):
+    config = loadConfigFile(xdgConfig)
+else:
+    config = loadConfigFile(args.config)
 
 if not config:
     writeDefaultConfig()
