@@ -18,6 +18,9 @@ import argparse
 import re
 import string
 
+# LOCAL
+from ytplaylist import YTPlaylist
+
 # Get Directory of config.json
 def getConfigDir():
     xdgConfig = str(os.getenv('XDG_CONFIG_HOME'))
@@ -136,13 +139,33 @@ def errorHandleJson(jsonResp):
 
 # Parse program arguments 
 def parseArguments():
-    parser = argparse.ArgumentParser()
-    parser.add_argument('-t', '--id3tag', help="Automatically sets up ID3 tags based on '-' delimiter. Requires optional dependency 'python-mutagen'", action="store_true")
-    parser.add_argument('-v', '--verbose', help="Includes skipped songs(Already downloaded and in active playlist)", action="store_true")
-    parser.add_argument('-s', '--simulate', help="Simulates without actually downloading, good for speed testing", action="store_true")
-    parser.add_argument('-c', '--config', help="Alternate config file location")
-    args = parser.parse_args()
-    return args
+	parser = argparse.ArgumentParser()
+	parser.add_argument('-t', '--id3tag', help="Automatically sets up ID3 tags based on '-' delimiter. Requires optional dependency 'python-mutagen'", action="store_true")
+	parser.add_argument('-v', '--verbose', help="Includes skipped songs(Already downloaded and in active playlist)", action="store_true")
+	parser.add_argument('-s', '--simulate', help="Simulates without actually downloading, good for speed testing", action="store_true")
+	parser.add_argument('-c', '--config', help="Alternate config file location")
+	parser.add_argument('--noapi', help="uses alternative method to youtube data api to grab meta data", action="store_true")
+	args = parser.parse_args()
+	return args
+
+# Grab playlist meta using youtube data api
+def getPlaylistDataAPI(url):
+	## Download page and decode data
+	page = downloadPage(url)
+
+	try:
+		jsonData = decodeJson(page)
+	except json.decoder.JSONDecodeError:
+		print("Error: Could not decode JSON response, ensure config.json is setup properly")
+		sys.exit(1)
+
+	response = errorHandleJson(jsonData)
+	if response is not None:
+		print("Error: " + response)
+		sys.exit(1)
+
+	return jsonData
+
 
 # BEGIN EXECUTION
 
@@ -179,22 +202,16 @@ if not config:
     print("No config, wrote default. Ensure to edit appropriately")
     sys.exit(1)
 
-url = "https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&playlistId=" + config['playlistID'] + "&key=" + config['googleAPIKey'] + "&maxResults=50"
+if args.noapi:
+	jsonData = YTPlaylist.fetchPlaylist(config['playlistID'])
+	if jsonData != None and jsonData != False:
+		print("Alternative Data Fetch Success")
+else:
+	url = "https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&playlistId=" + config['playlistID'] + "&key=" + config['googleAPIKey'] + "&maxResults=50"
+	jsonData = getPlaylistDataAPI(url)
 
 
-## Download page and decode data
-page = downloadPage(url)
 
-try:
-    jsonData = decodeJson(page)
-except json.decoder.JSONDecodeError:
-    print("Error: Could not decode JSON response, ensure config.json is setup properly")
-    sys.exit(1)
-
-response = errorHandleJson(jsonData)
-if response is not None:
-    print("Error: " + response)
-    sys.exit(1)
 
 songs = getSongList(config['destination'])
 neutralSongs = convertListFileSystemNeutral(songs)
