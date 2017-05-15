@@ -13,7 +13,9 @@ youtube-dl
 
 ### Optional Dependencies:
 ```
-python-mutagen
+python-mutagen (required by -t flag)
+python-selenium (required by --noapi flag)
+phantomjs (required by --noapi flag)
 ```
 
 ## Installation
@@ -25,16 +27,20 @@ $ wget https://gist.githubusercontent.com/SajeOne/87685cfc0208ccb797875b8f671afc
 $ makepkg -irs
 
 $ youtube-sync -h
-usage: youtube-sync [-h] [-t] [-v] [-s]
+usage: youtube-sync [-h] [-t] [-v] [-s] [-c CONFIG] [--noapi]
 
 optional arguments:
-  -h, --help      show this help message and exit
-  -t, --id3tag    Automatically sets up ID3 tags based on '-' delimiter.
-                  Requires optional dependency 'python-mutagen'
-  -v, --verbose   Includes skipped songs(Already downloaded and in active
-                  playlist)
-  -s, --simulate  Simulates without actually downloading, good for speed
-                  testing
+  -h, --help            show this help message and exit
+  -t, --id3tag          Automatically sets up ID3 tags based on '-' delimiter.
+                        Requires optional dependency 'python-mutagen'
+  -v, --verbose         Includes skipped songs(Already downloaded and in
+                        active playlist)
+  -s, --simulate        Simulates without actually downloading, good for speed
+                        testing
+  -c CONFIG, --config CONFIG
+                        Alternate config file location
+  --noapi               uses alternative method to youtube data api to grab
+                        meta data
 ```
 
 ## On Other Distributions
@@ -64,7 +70,7 @@ optional arguments:
                   testing
 ```
 
-##Setup
+## Setup
 
 Youtube-Sync's config file is put in $XDG_CONFIG_HOME/youtubeSync by default. If XDG_CONFIG_HOME is not defined the config file is placed in the same directory as the youtube-sync python script.
 
