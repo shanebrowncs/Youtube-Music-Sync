@@ -19,7 +19,7 @@ import re
 import string
 
 # LOCAL
-from ytplaylist import YTPlaylist
+from youtubesync.ytplaylist import YTPlaylist
 
 # Get Directory of config.json
 def getConfigDir():
