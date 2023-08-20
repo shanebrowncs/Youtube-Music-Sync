@@ -8,7 +8,7 @@ Command-line utility for maintaining an active repository of music in YouTube pl
 ### Required Dependencies:
 ```
 python >=3.0
-youtube-dl
+yt-dlp
 ```
 
 ### Optional Dependencies:

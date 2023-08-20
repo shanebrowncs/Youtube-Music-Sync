@@ -72,7 +72,7 @@ def writeDefaultConfig():
 # Download youtube video at URL specified and convert to mp3 in path folder
 def downloadVideo(url, path):
     try:
-        proc = sp.Popen(['youtube-dl', '--extract-audio', '--audio-format', 'mp3', '--output', path + "/%(title)s.%(ext)s", url], stdout=sp.PIPE)
+        proc = sp.Popen(['yt-dlp', '--extract-audio', '--audio-format', 'mp3', '--output', path + "/%(title)s.%(ext)s", url], stdout=sp.PIPE)
     except FileNotFoundError as ex:
         raise ex
     result = proc.communicate()[0]

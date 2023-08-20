@@ -3,7 +3,7 @@
 from setuptools import setup
 
 setup(name='youtube-sync',
-        version='1.0',
+        version='1.1.1',
         description='Maintains active repository of music in YouTube playlist',
         url='https://github.com/SajeOne/Youtube-Music-Sync',
         author='Shane "SajeOne" Brown',
